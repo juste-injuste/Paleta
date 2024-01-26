@@ -390,21 +390,21 @@ namespace Paleta
   {
     switch(foreground.color.type)
     {
-      case Color::_type::Default:
-        ostream << "\033[39m";
-        break;
-      case Color::_type::Basic:
-        ostream << "\033[";
-        ostream << static_cast<unsigned>(foreground.color._basic) << "m";
-        break;
-      case Color::_type::RGB:
-        ostream << "\033[38;2;";
-        ostream << static_cast<unsigned>(foreground.color._rgb.r) << ";";
-        ostream << static_cast<unsigned>(foreground.color._rgb.g) << ";";
-        ostream << static_cast<unsigned>(foreground.color._rgb.b) << "m";
-        break;
-      default:
-        break;
+    case Color::_type::Default:
+      ostream << "\033[39m";
+      break;
+    case Color::_type::Basic:
+      ostream << "\033[";
+      ostream << static_cast<unsigned>(foreground.color._basic) << "m";
+      break;
+    case Color::_type::RGB:
+      ostream << "\033[38;2;";
+      ostream << static_cast<unsigned>(foreground.color._rgb.r) << ";";
+      ostream << static_cast<unsigned>(foreground.color._rgb.g) << ";";
+      ostream << static_cast<unsigned>(foreground.color._rgb.b) << "m";
+      break;
+    default:
+      break;
     }
 
     return ostream;
@@ -414,21 +414,21 @@ namespace Paleta
   {
     switch(background.color.type)
     {
-      case Color::_type::Default:
-        ostream << "\033[49m";
-        break;
-      case Color::_type::Basic:
-        ostream << "\033[";
-        ostream << static_cast<unsigned>(background.color._basic) + 10 << "m";
-        break;
-      case Color::_type::RGB:
-        ostream << "\033[48;2;";
-        ostream << static_cast<unsigned>(background.color._rgb.r) << ";";
-        ostream << static_cast<unsigned>(background.color._rgb.g) << ";";
-        ostream << static_cast<unsigned>(background.color._rgb.b) << "m";
-        break;
-      default:
-        break;
+    case Color::_type::Default:
+      ostream << "\033[49m";
+      break;
+    case Color::_type::Basic:
+      ostream << "\033[";
+      ostream << static_cast<unsigned>(background.color._basic) + 10 << "m";
+      break;
+    case Color::_type::RGB:
+      ostream << "\033[48;2;";
+      ostream << static_cast<unsigned>(background.color._rgb.r) << ";";
+      ostream << static_cast<unsigned>(background.color._rgb.g) << ";";
+      ostream << static_cast<unsigned>(background.color._rgb.b) << "m";
+      break;
+    default:
+      break;
     }
 
     return ostream;
@@ -438,14 +438,14 @@ namespace Paleta
   {
     switch(weight)
     {
-      case Weight::Faint:
-        return ostream << "\033[2m";
-      case Weight::Normal:
-        return ostream << "\033[22m";
-      case Weight::Bold:
-        return ostream << "\033[1m";
-      default:
-        return ostream;
+    case Weight::Faint:
+      return ostream << "\033[2m";
+    case Weight::Normal:
+      return ostream << "\033[22m";
+    case Weight::Bold:
+      return ostream << "\033[1m";
+    default:
+      return ostream;
     }
   };
 
@@ -453,12 +453,12 @@ namespace Paleta
   {
     switch(italic)
     {
-      case Italic::True:
-        return ostream << "\033[3m";
-      case Italic::False:
-        return ostream << "\033[23m";
-      default:
-        return ostream;
+    case Italic::True:
+      return ostream << "\033[3m";
+    case Italic::False:
+      return ostream << "\033[23m";
+    default:
+      return ostream;
     }
   };
 
@@ -466,12 +466,12 @@ namespace Paleta
   {
     switch(strike)
     {
-      case Strike::True:
-        return ostream << "\033[9m";
-      case Strike::False:
-        return ostream << "\033[29m";
-      default:
-        return ostream;
+    case Strike::True:
+      return ostream << "\033[9m";
+    case Strike::False:
+      return ostream << "\033[29m";
+    default:
+      return ostream;
     }
   };
 
@@ -479,14 +479,14 @@ namespace Paleta
   {
     switch(underline)
     {
-      case Underline::None:
-        return ostream << "\033[24m";
-      case Underline::Single:
-        return ostream << "\033[4m";
-      case Underline::Double:
-        return ostream << "\033[21m";
-      default:
-        return ostream;
+    case Underline::None:
+      return ostream << "\033[24m";
+    case Underline::Single:
+      return ostream << "\033[4m";
+    case Underline::Double:
+      return ostream << "\033[21m";
+    default:
+      return ostream;
     }
   };
 
@@ -494,12 +494,12 @@ namespace Paleta
   {
     switch(overline)
     {
-      case Overline::None:
-        return ostream << "\033[55m";
-      case Overline::Single:
-        return ostream << "\033[53m";
-      default:
-        return ostream;
+    case Overline::None:
+      return ostream << "\033[55m";
+    case Overline::Single:
+      return ostream << "\033[53m";
+    default:
+      return ostream;
     }
   };
 
