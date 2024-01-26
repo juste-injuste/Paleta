@@ -4,16 +4,16 @@
 
 int main()
 {
-  std::cout << Paleta::clear(); // clear terminal
+  std::cout << Paleta::Clear(); // clear terminal
 
-  std::cout << "\033[m" << Paleta::Background(Paleta::Color::RGB(0, 50, 50));
+  std::cout << Paleta::Background(Paleta::Color::RGB(0, 50, 50));
 
-  auto fmt1 = PALETA_FORMAT(Foreground(Color::RGB(125, 33, 200)), Italic::True,  Strike::False, Underline::Single);
-  auto fmt2 = PALETA_FORMAT(Foreground(Color::Basic::Red),        Italic::Keep,  Strike::True,  Underline::None);
-  auto fmt3 = PALETA_FORMAT(Foreground(Color::Default),           Italic::False, Strike::False, Underline::Double);
+  auto fmt_1 = PALETA_FORMAT(Foreground(Color::RGB(125, 33, 200)), Italic::True,  Strike::False, Underline::Single);
+  auto fmt_2 = PALETA_FORMAT(Foreground(Color::Basic::Red),        Italic::Keep,  Strike::True,  Underline::None);
+  auto fmt_3 = PALETA_FORMAT(Foreground(Color::Default),           Italic::False, Strike::False, Underline::Double);
 
   std::cout << PALETA_FORMAT(Overline::Single);
-  std::cout << "huh " << fmt1 << "test " << fmt2 << "test " << fmt3 << "test " << Paleta::Format::reset() << "test ";
+  std::cout << "huh " << fmt_1 << "test " << fmt_2 << "test " << fmt_3 << "test " << Paleta::Format::reset() << "test ";
   
   std::cout << "\033[0m";
 
