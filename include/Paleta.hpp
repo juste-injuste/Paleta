@@ -39,8 +39,9 @@ Version 0.1.0 - Initial release
 #define PALETA_HPP
 #if __cplusplus >= 201103L
 //---necessary libraries------------------------------------------------------------------------------------------------
-#include <ostream>  // for std::ostream
 #include <cstdint>  // for uint8_t
+#include <ostream>  // for std::ostream
+#include <iostream> // for std::cout, std::clog, std::cerr
 //---Paleta-------------------------------------------------------------------------------------------------------------
 namespace Paleta
 {
@@ -88,8 +89,7 @@ namespace Paleta
 
 # define PALETA_FORMAT(...)
 
-  inline
-  const char* clear() noexcept;
+  struct Clear;
 
   inline
   std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept;
@@ -114,6 +114,9 @@ namespace Paleta
 
   inline
   std::ostream& operator<<(std::ostream& ostream, Format format) noexcept;
+
+  inline
+  std::ostream& operator<<(std::ostream& ostream, Clear) noexcept;
 
   namespace Version
   {
@@ -247,10 +250,8 @@ namespace Paleta
       return Format(__VA_ARGS__); \
     }()
 
-  const char* clear() noexcept
-  {
-    return "\033[H\033[J";
-  }
+  struct Clear final
+  {};
 //---------------------------------------------------------------------------------------------------------------------- 
   Color::RGB::RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept :
     r(red),
@@ -520,6 +521,18 @@ namespace Paleta
 
     return ostream;
   };
+
+  std::ostream& operator<<(std::ostream& ostream, Clear) noexcept
+  {
+    if ((ostream.rdbuf() == std::cout.rdbuf()) ||
+        (ostream.rdbuf() == std::cerr.rdbuf()) ||
+        (ostream.rdbuf() == std::clog.rdbuf()))
+    {
+      ostream << "\033[H\033[J";
+    }
+
+    return ostream;
+  }
 //----------------------------------------------------------------------------------------------------------------------
 }
 #else
