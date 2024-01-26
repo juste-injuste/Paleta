@@ -157,15 +157,9 @@ namespace Paleta
       Bright_White    = 97
     };
 
-    enum
-    {
-      Default
-    };
+    enum { Default };
 
-    enum
-    {
-      Keep
-    };
+    enum { Keep };
     
     inline Color(Basic basic)       noexcept;
     inline Color(RGB   rgb)         noexcept;
@@ -173,7 +167,7 @@ namespace Paleta
     inline Color(decltype(Keep))    noexcept;
     inline Color()                  noexcept;
   private:
-    enum class Type
+    enum class _type
     {
       Keep,
       Default,
@@ -183,8 +177,8 @@ namespace Paleta
 
     union
     {
-      Basic basic;
-      RGB   rgb = RGB(0, 0, 0);
+      Basic _basic;
+      RGB   _rgb = RGB(0, 0, 0);
     };
 
   friend class Format;
@@ -260,25 +254,25 @@ namespace Paleta
   {}
 
   Color::Color() noexcept :
-    type(Type::Keep)
+    type(_type::Keep)
   {}
 
   Color::Color(decltype(Keep)) noexcept :
-    type(Type::Keep)
+    type(_type::Keep)
   {}
 
   Color::Color(decltype(Default)) noexcept :
-    type(Type::Default)
+    type(_type::Default)
   {}
 
   Color::Color(Basic basic_) noexcept :
-    type(Type::Basic),
-    basic(basic_)
+    type(_type::Basic),
+    _basic(basic_)
   {}
 
   Color::Color(RGB rgb_color) noexcept :
-    type(Type::RGB),
-    rgb(rgb_color)
+    type(_type::RGB),
+    _rgb(rgb_color)
   {}
 
   template<typename C>
@@ -356,12 +350,12 @@ namespace Paleta
 
   void Format::_format(const Format& format) noexcept
   {
-    if (format.foreground.color.type != Color::Type::Keep)
+    if (format.foreground.color.type != Color::_type::Keep)
     {
       foreground = format.foreground;
     }
     
-    if (format.background.color.type != Color::Type::Keep)
+    if (format.background.color.type != Color::_type::Keep)
     {
       background = format.background;
     }
@@ -396,18 +390,18 @@ namespace Paleta
   {
     switch(foreground.color.type)
     {
-      case Color::Type::Default:
+      case Color::_type::Default:
         ostream << "\033[39m";
         break;
-      case Color::Type::Basic:
+      case Color::_type::Basic:
         ostream << "\033[";
-        ostream << static_cast<unsigned>(foreground.color.basic) << "m";
+        ostream << static_cast<unsigned>(foreground.color._basic) << "m";
         break;
-      case Color::Type::RGB:
+      case Color::_type::RGB:
         ostream << "\033[38;2;";
-        ostream << static_cast<unsigned>(foreground.color.rgb.r) << ";";
-        ostream << static_cast<unsigned>(foreground.color.rgb.g) << ";";
-        ostream << static_cast<unsigned>(foreground.color.rgb.b) << "m";
+        ostream << static_cast<unsigned>(foreground.color._rgb.r) << ";";
+        ostream << static_cast<unsigned>(foreground.color._rgb.g) << ";";
+        ostream << static_cast<unsigned>(foreground.color._rgb.b) << "m";
         break;
       default:
         break;
@@ -420,18 +414,18 @@ namespace Paleta
   {
     switch(background.color.type)
     {
-      case Color::Type::Default:
+      case Color::_type::Default:
         ostream << "\033[49m";
         break;
-      case Color::Type::Basic:
+      case Color::_type::Basic:
         ostream << "\033[";
-        ostream << static_cast<unsigned>(background.color.basic) + 10 << "m";
+        ostream << static_cast<unsigned>(background.color._basic) + 10 << "m";
         break;
-      case Color::Type::RGB:
+      case Color::_type::RGB:
         ostream << "\033[48;2;";
-        ostream << static_cast<unsigned>(background.color.rgb.r) << ";";
-        ostream << static_cast<unsigned>(background.color.rgb.g) << ";";
-        ostream << static_cast<unsigned>(background.color.rgb.b) << "m";
+        ostream << static_cast<unsigned>(background.color._rgb.r) << ";";
+        ostream << static_cast<unsigned>(background.color._rgb.g) << ";";
+        ostream << static_cast<unsigned>(background.color._rgb.b) << "m";
         break;
       default:
         break;
