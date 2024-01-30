@@ -113,7 +113,7 @@ namespace Paleta
   std::ostream& operator<<(std::ostream& ostream, Overline overline) noexcept;
 
   inline
-  std::ostream& operator<<(std::ostream& ostream, Format format) noexcept;
+  std::ostream& operator<<(std::ostream& ostream, const Format& format) noexcept;
 
   inline
   std::ostream& operator<<(std::ostream& ostream, Clear) noexcept;
@@ -131,7 +131,7 @@ namespace Paleta
   public:
     struct RGB
     {
-      inline
+      inline constexpr
       RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept;
       uint8_t r, g, b;
     };
@@ -161,25 +161,40 @@ namespace Paleta
 
     enum { Keep };
     
-    inline Color(Basic basic)       noexcept;
-    inline Color(RGB   rgb)         noexcept;
-    inline Color(decltype(Default)) noexcept;
-    inline Color(decltype(Keep))    noexcept;
-    inline Color()                  noexcept;
-  private:
-    enum class _type
-    {
-      Keep,
-      Default,
-      Basic,
-      RGB
-    } type;
+    inline constexpr
+    Color(Basic basic) noexcept;
 
-    union
+    inline constexpr
+    Color(RGB rgb) noexcept;
+    
+    inline constexpr
+    Color(decltype(Default)) noexcept;
+    
+    inline constexpr
+    Color(decltype(Keep)) noexcept;
+    
+    inline constexpr
+    Color() noexcept;
+  private:
+    enum class _type_t
     {
+      KEEP,
+      DEFAULT,
+      BASIC,
+      RGB
+    } _type;
+
+    union _impl_t
+    {
+      constexpr
+      _impl_t(Basic basic) noexcept : _basic(basic)      {}
+      constexpr
+      _impl_t(RGB   rgb)   noexcept : _rgb(rgb)          {}
+      constexpr
+      _impl_t()            noexcept : _rgb(RGB(0, 0, 0)) {}
       Basic _basic;
-      RGB   _rgb = RGB(0, 0, 0);
-    };
+      RGB   _rgb;
+    } _impl;
 
   friend class Format;
   friend std::ostream& operator<<(std::ostream&, Foreground) noexcept;
@@ -190,8 +205,12 @@ namespace Paleta
   {
   public:
     template<typename C>
-    inline
+    inline constexpr
     Background(C color) noexcept;
+
+    template<typename C>
+    inline
+    void operator=(C color) noexcept;
 
     Color color;
   };
@@ -200,8 +219,12 @@ namespace Paleta
   {
   public:
     template<typename C>
-    inline
+    inline constexpr
     Foreground(C color) noexcept;
+
+    template<typename C>
+    inline
+    void operator=(C color) noexcept;
 
     Color color;
   };
@@ -209,21 +232,24 @@ namespace Paleta
   class Format
   {
   public:
+    inline constexpr
+    Format() noexcept = default;
+
     template<typename... F>
     inline
     Format(F... formats) noexcept;
 
-    Foreground foreground = Color::Keep;
-    Background background = Color::Keep;
-    Weight     weight     = Weight::Keep;
-    Italic     italic     = Italic::Keep;
-    Strike     strike     = Strike::Keep;
-    Underline  underline  = Underline::Keep;
-    Overline   overline   = Overline::Keep;
-
     static inline
     Format reset() noexcept;
   private:
+    Foreground _foreground = Color::Keep;
+    Background _background = Color::Keep;
+    Weight     _weight     = Weight::Keep;
+    Italic     _italic     = Italic::Keep;
+    Strike     _strike     = Strike::Keep;
+    Underline  _underline  = Underline::Keep;
+    Overline   _overline   = Overline::Keep;
+
     template<typename F, typename... F_>
     inline void _format_dispatch(F format, F_... remaining_formats) noexcept;
     inline void _format_dispatch() noexcept;
@@ -235,6 +261,7 @@ namespace Paleta
     inline void _format(Underline     underline) noexcept;
     inline void _format(Overline      overline)  noexcept;
     inline void _format(const Format& format)    noexcept;
+  friend std::ostream& operator<<(std::ostream&, const Format&) noexcept;
   };
 
 # undef  PALETA_FORMAT
@@ -247,43 +274,63 @@ namespace Paleta
   struct Clear final
   {};
 //---------------------------------------------------------------------------------------------------------------------- 
+  constexpr
   Color::RGB::RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept :
     r(red),
     g(green),
     b(blue)
   {}
 
+  constexpr
   Color::Color() noexcept :
-    type(_type::Keep)
+    _type(_type_t::KEEP)
   {}
 
+  constexpr
   Color::Color(decltype(Keep)) noexcept :
-    type(_type::Keep)
+    _type(_type_t::KEEP)
   {}
 
+  constexpr
   Color::Color(decltype(Default)) noexcept :
-    type(_type::Default)
+    _type(_type_t::DEFAULT)
   {}
 
+  constexpr
   Color::Color(Basic basic_) noexcept :
-    type(_type::Basic),
-    _basic(basic_)
+    _type(_type_t::BASIC),
+    _impl(basic_)
   {}
 
+  constexpr
   Color::Color(RGB rgb_color) noexcept :
-    type(_type::RGB),
-    _rgb(rgb_color)
+    _type(_type_t::RGB),
+    _impl(rgb_color)
   {}
 
   template<typename C>
+  constexpr
   Background::Background(C color_) noexcept :
     color(color_)
   {}
+  
+  template<typename C>
+  void Background::operator=(C color_) noexcept
+  {
+    color = color_;
+  }
 
   template<typename C>
+  constexpr
   Foreground::Foreground(C color_) noexcept :
     color(color_)
   {}
+  
+  template<typename C>
+  void Foreground::operator=(C color_) noexcept
+  {
+    color = color_;
+  }
 
   template<typename... F>
   Format::Format(F... formats) noexcept
@@ -315,93 +362,93 @@ namespace Paleta
 
   void Format::_format(Background background_) noexcept
   {
-    background = background_;
+    _background = background_;
   }
 
   void Format::_format(Foreground foreground_) noexcept
   {
-    foreground = foreground_;
+    _foreground = foreground_;
   }
 
   void Format::_format(Weight weight_) noexcept
   {
-    weight = weight_;
+    _weight = weight_;
   }
 
   void Format::_format(Italic italic_) noexcept
   {
-    italic = italic_;
+    _italic = italic_;
   }
 
   void Format::_format(Strike strike_) noexcept
   {
-    strike = strike_;
+    _strike = strike_;
   }
 
   void Format::_format(Underline underline_) noexcept
   {
-    underline = underline_;
+    _underline = underline_;
   }
 
   void Format::_format(Overline overline_) noexcept
   {
-    overline = overline_;
+    _overline = overline_;
   }
 
   void Format::_format(const Format& format) noexcept
   {
-    if (format.foreground.color.type != Color::_type::Keep)
+    if (format._foreground.color._type != Color::_type_t::KEEP)
     {
-      foreground = format.foreground;
+      _foreground = format._foreground;
     }
     
-    if (format.background.color.type != Color::_type::Keep)
+    if (format._background.color._type != Color::_type_t::KEEP)
     {
-      background = format.background;
+      _background = format._background;
     }
     
-    if (format.weight != Weight::Keep)
+    if (format._weight != Weight::Keep)
     {
-      weight = format.weight;
+      _weight = format._weight;
     }
     
-    if (format.italic != Italic::Keep)
+    if (format._italic != Italic::Keep)
     {
-      italic = format.italic;
+      _italic = format._italic;
     }
     
-    if (format.strike != Strike::Keep)
+    if (format._strike != Strike::Keep)
     {
-      strike = format.strike;
+      _strike = format._strike;
     }
     
-    if (format.underline != Underline::Keep)
+    if (format._underline != Underline::Keep)
     {
-      underline = format.underline;
+      _underline = format._underline;
     }
     
-    if (format.overline != Overline::Keep)
+    if (format._overline != Overline::Keep)
     {
-      overline = format.overline;
+      _overline = format._overline;
     }
   }
 
   std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept
   {
-    switch(foreground.color.type)
+    switch(foreground.color._type)
     {
-    case Color::_type::Default:
+    case Color::_type_t::DEFAULT:
       ostream << "\033[39m";
       break;
-    case Color::_type::Basic:
+    case Color::_type_t::BASIC:
       ostream << "\033[";
-      ostream << static_cast<unsigned>(foreground.color._basic) << "m";
+      ostream << static_cast<unsigned>(foreground.color._impl._basic) << "m";
       break;
-    case Color::_type::RGB:
+    case Color::_type_t::RGB:
       ostream << "\033[38;2;";
-      ostream << static_cast<unsigned>(foreground.color._rgb.r) << ";";
-      ostream << static_cast<unsigned>(foreground.color._rgb.g) << ";";
-      ostream << static_cast<unsigned>(foreground.color._rgb.b) << "m";
+      ostream << static_cast<unsigned>(foreground.color._impl._rgb.r) << ";";
+      ostream << static_cast<unsigned>(foreground.color._impl._rgb.g) << ";";
+      ostream << static_cast<unsigned>(foreground.color._impl._rgb.b) << "m";
       break;
     default:
       break;
@@ -412,20 +459,20 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Background background) noexcept
   {
-    switch(background.color.type)
+    switch(background.color._type)
     {
-    case Color::_type::Default:
+    case Color::_type_t::DEFAULT:
       ostream << "\033[49m";
       break;
-    case Color::_type::Basic:
+    case Color::_type_t::BASIC:
       ostream << "\033[";
-      ostream << static_cast<unsigned>(background.color._basic) + 10 << "m";
+      ostream << static_cast<unsigned>(background.color._impl._basic) + 10 << "m";
       break;
-    case Color::_type::RGB:
+    case Color::_type_t::RGB:
       ostream << "\033[48;2;";
-      ostream << static_cast<unsigned>(background.color._rgb.r) << ";";
-      ostream << static_cast<unsigned>(background.color._rgb.g) << ";";
-      ostream << static_cast<unsigned>(background.color._rgb.b) << "m";
+      ostream << static_cast<unsigned>(background.color._impl._rgb.r) << ";";
+      ostream << static_cast<unsigned>(background.color._impl._rgb.g) << ";";
+      ostream << static_cast<unsigned>(background.color._impl._rgb.b) << "m";
       break;
     default:
       break;
@@ -503,15 +550,15 @@ namespace Paleta
     }
   };
 
-  std::ostream& operator<<(std::ostream& ostream, Format format) noexcept
+  std::ostream& operator<<(std::ostream& ostream, const Format& format) noexcept
   {
-    ostream << format.foreground;
-    ostream << format.background;
-    ostream << format.weight;
-    ostream << format.italic;
-    ostream << format.strike;
-    ostream << format.underline;
-    ostream << format.overline;
+    ostream << format._foreground;
+    ostream << format._background;
+    ostream << format._weight;
+    ostream << format._italic;
+    ostream << format._strike;
+    ostream << format._underline;
+    ostream << format._overline;
 
     return ostream;
   };
