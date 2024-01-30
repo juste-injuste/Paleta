@@ -1,4 +1,4 @@
-# Paleta (C++11 multithreading library)
+# Paleta (C++11 xxx library)
 
 [![GitHub releases](https://img.shields.io/github/v/release/juste-injuste/Paleta.svg)](https://github.com/juste-injuste/Paleta/releases)
 [![License](https://img.shields.io/github/license/juste-injuste/Paleta.svg)](LICENSE)
@@ -10,12 +10,12 @@ Paleta is a simple and lightweight C++11 (and newer) library that makes terminal
 ## Features
 
 Paleta offers the following:
-* [Format](#Pool) to create thread pools
-* [NIMATA_CYCLIC](#NIMATA_CYCLIC) to periodically call code blocks
-* `clear()` is the hardware thread concurency
+* [Format](#Format) to 
+* [PALETA_FORMAT](#PALETA_FORMAT) to 
+* `clear()` is 
 ---
 
-### Pool
+### Format
 The `Format` class allows the programmer to bundle multiple formatting options together.
 
 _Constructor_:
