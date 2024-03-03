@@ -34,9 +34,11 @@ Version 0.1.0 - Initial release
 
 -----description--------------------------------------------------------------------------------------------------------
 
+fmz::Format;
+
 -----inclusion guard--------------------------------------------------------------------------------------------------*/
-#ifndef PALETA_HPP
-#define PALETA_HPP
+#ifndef _paleta_hpp
+#define _paleta_hpp
 #if __cplusplus >= 201103L
 //---necessary libraries------------------------------------------------------------------------------------------------
 #include <cstdint>  // for uint8_t
@@ -118,7 +120,7 @@ namespace Paleta
   inline
   std::ostream& operator<<(std::ostream& ostream, Clear) noexcept;
 
-  namespace Version
+  namespace _version
   {
     constexpr long MAJOR  = 000;
     constexpr long MINOR  = 001;
@@ -161,20 +163,11 @@ namespace Paleta
 
     enum { Keep };
     
-    inline constexpr
-    Color(Basic basic) noexcept;
-
-    inline constexpr
-    Color(RGB rgb) noexcept;
-    
-    inline constexpr
-    Color(decltype(Default)) noexcept;
-    
-    inline constexpr
-    Color(decltype(Keep)) noexcept;
-    
-    inline constexpr
-    Color() noexcept;
+    inline constexpr Color(Basic basic)       noexcept;
+    inline constexpr Color(RGB   rgb)         noexcept;
+    inline constexpr Color(decltype(Default)) noexcept;    
+    inline constexpr Color(decltype(Keep))    noexcept;
+    inline constexpr Color()                  noexcept;
   private:
     enum class _type_t
     {
@@ -184,17 +177,14 @@ namespace Paleta
       RGB
     } _type;
 
-    union _impl_t
+    union _data_t
     {
-      constexpr
-      _impl_t(Basic basic) noexcept : _basic(basic)      {}
-      constexpr
-      _impl_t(RGB   rgb)   noexcept : _rgb(rgb)          {}
-      constexpr
-      _impl_t()            noexcept : _rgb(RGB(0, 0, 0)) {}
+      constexpr _data_t(Basic basic) noexcept : _basic(basic)      {}
+      constexpr _data_t(RGB   rgb)   noexcept : _rgb(rgb)          {}
+      constexpr _data_t()            noexcept : _rgb(RGB(0, 0, 0)) {}
       Basic _basic;
       RGB   _rgb;
-    } _impl;
+    } _data;
 
   friend class Format;
   friend std::ostream& operator<<(std::ostream&, Foreground) noexcept;
@@ -208,10 +198,6 @@ namespace Paleta
     inline constexpr
     Background(C color) noexcept;
 
-    template<typename C>
-    inline
-    void operator=(C color) noexcept;
-
     Color color;
   };
 
@@ -221,10 +207,6 @@ namespace Paleta
     template<typename C>
     inline constexpr
     Foreground(C color) noexcept;
-
-    template<typename C>
-    inline
-    void operator=(C color) noexcept;
 
     Color color;
   };
@@ -271,8 +253,7 @@ namespace Paleta
       return Format(__VA_ARGS__); \
     }()
 
-  struct Clear final
-  {};
+  struct Clear final {};
 //---------------------------------------------------------------------------------------------------------------------- 
   constexpr
   Color::RGB::RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept :
@@ -297,15 +278,15 @@ namespace Paleta
   {}
 
   constexpr
-  Color::Color(Basic basic_) noexcept :
+  Color::Color(Basic basic) noexcept :
     _type(_type_t::BASIC),
-    _impl(basic_)
+    _data(basic)
   {}
 
   constexpr
-  Color::Color(RGB rgb_color) noexcept :
+  Color::Color(RGB rgb) noexcept :
     _type(_type_t::RGB),
-    _impl(rgb_color)
+    _data(rgb)
   {}
 
   template<typename C>
@@ -315,23 +296,11 @@ namespace Paleta
   {}
   
   template<typename C>
-  void Background::operator=(C color_) noexcept
-  {
-    color = color_;
-  }
-
-  template<typename C>
   constexpr
   Foreground::Foreground(C color_) noexcept :
     color(color_)
   {}
   
-  template<typename C>
-  void Foreground::operator=(C color_) noexcept
-  {
-    color = color_;
-  }
-
   template<typename... F>
   Format::Format(F... formats) noexcept
   {
@@ -442,13 +411,13 @@ namespace Paleta
       break;
     case Color::_type_t::BASIC:
       ostream << "\033[";
-      ostream << static_cast<unsigned>(foreground.color._impl._basic) << "m";
+      ostream << static_cast<unsigned>(foreground.color._data._basic) << "m";
       break;
     case Color::_type_t::RGB:
       ostream << "\033[38;2;";
-      ostream << static_cast<unsigned>(foreground.color._impl._rgb.r) << ";";
-      ostream << static_cast<unsigned>(foreground.color._impl._rgb.g) << ";";
-      ostream << static_cast<unsigned>(foreground.color._impl._rgb.b) << "m";
+      ostream << static_cast<unsigned>(foreground.color._data._rgb.r) << ";";
+      ostream << static_cast<unsigned>(foreground.color._data._rgb.g) << ";";
+      ostream << static_cast<unsigned>(foreground.color._data._rgb.b) << "m";
       break;
     default:
       break;
@@ -466,13 +435,13 @@ namespace Paleta
       break;
     case Color::_type_t::BASIC:
       ostream << "\033[";
-      ostream << static_cast<unsigned>(background.color._impl._basic) + 10 << "m";
+      ostream << static_cast<unsigned>(background.color._data._basic) + 10 << "m";
       break;
     case Color::_type_t::RGB:
       ostream << "\033[48;2;";
-      ostream << static_cast<unsigned>(background.color._impl._rgb.r) << ";";
-      ostream << static_cast<unsigned>(background.color._impl._rgb.g) << ";";
-      ostream << static_cast<unsigned>(background.color._impl._rgb.b) << "m";
+      ostream << static_cast<unsigned>(background.color._data._rgb.r) << ";";
+      ostream << static_cast<unsigned>(background.color._data._rgb.g) << ";";
+      ostream << static_cast<unsigned>(background.color._data._rgb.b) << "m";
       break;
     default:
       break;
