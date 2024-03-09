@@ -1,4 +1,5 @@
 #include "Paleta.hpp"
+#include "Chronometro.hpp"
 #include <iostream>
 #include <cstdlib>
 

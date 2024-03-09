@@ -186,9 +186,9 @@ namespace Paleta
       RGB   _rgb;
     } _data;
 
-  friend class Format;
-  friend std::ostream& operator<<(std::ostream&, Foreground) noexcept;
-  friend std::ostream& operator<<(std::ostream&, Background) noexcept;
+    friend class Format;
+    friend std::ostream& operator<<(std::ostream&, Foreground) noexcept;
+    friend std::ostream& operator<<(std::ostream&, Background) noexcept;
   };
 
   class Background
@@ -214,9 +214,6 @@ namespace Paleta
   class Format
   {
   public:
-    inline constexpr
-    Format() noexcept = default;
-
     template<typename... F>
     inline
     Format(F... formats) noexcept;
@@ -234,7 +231,7 @@ namespace Paleta
 
     template<typename F, typename... F_>
     inline void _format_dispatch(F format, F_... remaining_formats) noexcept;
-    inline void _format_dispatch() noexcept;
+    inline void _format_dispatch() noexcept {};
     inline void _format(Foreground    color)     noexcept;
     inline void _format(Background    color)     noexcept;
     inline void _format(Weight        weight)    noexcept;
@@ -243,7 +240,7 @@ namespace Paleta
     inline void _format(Underline     underline) noexcept;
     inline void _format(Overline      overline)  noexcept;
     inline void _format(const Format& format)    noexcept;
-  friend std::ostream& operator<<(std::ostream&, const Format&) noexcept;
+    friend std::ostream& operator<<(std::ostream&, const Format&) noexcept;
   };
 
 # undef  PALETA_FORMAT
@@ -325,9 +322,6 @@ namespace Paleta
     _format(format);
     _format_dispatch(remaining_formats...);
   }
-  
-  void Format::_format_dispatch() noexcept
-  {}
 
   void Format::_format(Background background_) noexcept
   {
@@ -404,7 +398,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept
   {
-    switch(foreground.color._type)
+    switch (foreground.color._type)
     {
     case Color::_type_t::DEFAULT:
       ostream << "\033[39m";
@@ -428,7 +422,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Background background) noexcept
   {
-    switch(background.color._type)
+    switch (background.color._type)
     {
     case Color::_type_t::DEFAULT:
       ostream << "\033[49m";
@@ -452,7 +446,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Weight weight) noexcept
   {
-    switch(weight)
+    switch (weight)
     {
     case Weight::Faint:
       return ostream << "\033[2m";
@@ -467,7 +461,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Italic italic) noexcept
   {
-    switch(italic)
+    switch (italic)
     {
     case Italic::True:
       return ostream << "\033[3m";
@@ -480,7 +474,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Strike strike) noexcept
   {
-    switch(strike)
+    switch (strike)
     {
     case Strike::True:
       return ostream << "\033[9m";
@@ -493,7 +487,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Underline underline) noexcept
   {
-    switch(underline)
+    switch (underline)
     {
     case Underline::None:
       return ostream << "\033[24m";
@@ -508,7 +502,7 @@ namespace Paleta
 
   std::ostream& operator<<(std::ostream& ostream, Overline overline) noexcept
   {
-    switch(overline)
+    switch (overline)
     {
     case Overline::None:
       return ostream << "\033[55m";
