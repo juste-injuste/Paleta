@@ -47,10 +47,12 @@ fmz::Format;
 //---Paleta-------------------------------------------------------------------------------------------------------------
 namespace fmz
 {
-  class Color;
-  class Foreground;
-  class Background;
   class Format;
+
+  template<typename Specifiers>
+  auto make_format(Specifiers specifiers) -> Format;
+
+  struct Clear;
 
   enum class Weight
   {
@@ -89,10 +91,11 @@ namespace fmz
     Single
   };
 
-  template<typename Specifiers>
-  auto make_format(Specifiers specifiers) -> Format;
+  class Color;
 
-  struct Clear;
+  class Foreground;
+
+  class Background;
 
   inline
   std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept;
@@ -250,7 +253,6 @@ namespace fmz
     return specifiers_();
   }
 
-# undef  make_format
 # define make_format(...)         \
     make_format([]{               \
       using namespace fmz;        \
