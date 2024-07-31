@@ -3,5 +3,5 @@
 
 void ODR()
 {
-    std::cout << fmz::make_format(Foreground(Color::Basic::Red));
+    std::cout << fmz::terminal_format(Foreground(Colors::Red));
 }

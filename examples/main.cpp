@@ -7,21 +7,19 @@ int main()
 {
   std::cout << fmz::Clear(); // clear terminal
 
-  std::cout << fmz::Background(fmz::Color::RGB(0, 50, 50));
+  std::cout << fmz::Background(0, 50, 50);
 
-  auto fmt_1 = fmz::make_format(Foreground(Color::RGB(125, 33, 200)), Italic::True,  Strike::False, Underline::Single);
-  auto fmt_2 = fmz::make_format(Foreground(Color::Basic::Red),        Italic::Keep,  Strike::True,  Underline::None);
-  auto fmt_3 = fmz::make_format(Foreground(Color::Default),           Italic::False, Strike::False, Underline::Double);
+  const auto fmt_1 = fmz::terminal_format(Foreground(125, 33, 200), Strike::False, Underline::Single, Italic::True );
+  const auto fmt_2 = fmz::terminal_format(Foreground(Colors::Red),  Strike::True,  Underline::None                 );
+  const auto fmt_3 = fmz::terminal_format(Foreground(Reset()),      Strike::False, Underline::Double, Italic::False);
 
-  std::cout << fmz::make_format(Overline::Single);
-  std::cout << "huh " << fmt_1 << "test " << fmt_2 << "test " << fmt_3 << "test " << fmz::Format::reset() << "test ";
-  
-  std::cout << "\033[0m";
+  std::cout << fmz::terminal_format(Overline::Single);
+  std::cout << "huh " << fmt_1 << "test " << fmt_2 << "test " << fmt_3 << "test " << fmz::Reset() << "test ";
 
-  auto base_fmt = fmz::make_format(Format::reset(), Foreground(Color::RGB(125, 33, 200)));
-  std::cout << base_fmt << "\nfirst pass " << fmz::make_format(Background(Color::Basic::Gray)) << "second pass";
+  std::cout << fmz::Reset();
 
-  std::cout << fmz::Format::reset();
+  auto base_fmt = fmz::terminal_format(Reset(), Foreground(125, 33, 200));
+  std::cout << base_fmt << "\nfirst pass " << fmz::terminal_format(Background(Colors::Gray)) << "second pass";
 
-  std::cout << sizeof(fmz::Format);
+  std::cout << fmz::Reset();
 }
