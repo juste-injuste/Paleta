@@ -3,5 +3,5 @@
 
 void ODR()
 {
-    std::cout << PALETA_FORMAT(Foreground(Color::Basic::Red));
+    std::cout << fmz::make_format(Foreground(Color::Basic::Red));
 }

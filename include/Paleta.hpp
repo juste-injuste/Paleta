@@ -45,7 +45,7 @@ fmz::Format;
 #include <ostream>  // for std::ostream
 #include <iostream> // for std::cout, std::clog, std::cerr
 //---Paleta-------------------------------------------------------------------------------------------------------------
-namespace Paleta
+namespace fmz
 {
   class Color;
   class Foreground;
@@ -89,7 +89,8 @@ namespace Paleta
     Single
   };
 
-# define PALETA_FORMAT(...)
+  template<typename Specifiers>
+  auto make_format(Specifiers specifiers) -> Format;
 
   struct Clear;
 
@@ -131,7 +132,7 @@ namespace Paleta
   class Color
   {
   public:
-    struct RGB
+    struct RGB final
     {
       inline constexpr
       RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept;
@@ -243,12 +244,18 @@ namespace Paleta
     friend std::ostream& operator<<(std::ostream&, const Format&) noexcept;
   };
 
-# undef  PALETA_FORMAT
-# define PALETA_FORMAT(...)       \
-    []{                           \
-      using namespace Paleta;     \
+  template<typename Specifiers>
+  auto make_format(const Specifiers specifiers_) -> Format
+  {
+    return specifiers_();
+  }
+
+# undef  make_format
+# define make_format(...)         \
+    make_format([]{               \
+      using namespace fmz;        \
       return Format(__VA_ARGS__); \
-    }()
+    })
 
   struct Clear final {};
 //---------------------------------------------------------------------------------------------------------------------- 
@@ -317,9 +324,9 @@ namespace Paleta
   }
 
   template<typename F, typename... F_>
-  void Format::_format_dispatch(F format, F_... remaining_formats) noexcept
+  void Format::_format_dispatch(F format_, F_... remaining_formats) noexcept
   {
-    _format(format);
+    _format(format_);
     _format_dispatch(remaining_formats...);
   }
 
