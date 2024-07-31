@@ -41,7 +41,7 @@ fmz::Format;
 #define _paleta_hpp
 #if __cplusplus >= 201103L
 //---necessary libraries------------------------------------------------------------------------------------------------
-#include <cstdint>  // for uint_fast8_t
+#include <cstdint>  // for uint8_t, uint_fast8_t
 #include <ostream>  // for std::ostream
 #include <iostream> // for std::cout, std::clog, std::cerr
 //---Paleta-------------------------------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ namespace fmz
     struct RGB final
     {
       inline constexpr
-      RGB(uint_fast8_t red, uint_fast8_t green, uint_fast8_t blue) noexcept;
+      RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept;
       uint_fast8_t r, g, b;
     };
 
@@ -260,7 +260,7 @@ namespace fmz
   struct Clear final {};
 //---------------------------------------------------------------------------------------------------------------------- 
   constexpr
-  Color::RGB::RGB(uint_fast8_t red, uint_fast8_t green, uint_fast8_t blue) noexcept :
+  Color::RGB::RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept :
     r(red),
     g(green),
     b(blue)
