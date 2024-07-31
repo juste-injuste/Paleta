@@ -41,7 +41,7 @@ fmz::Format;
 #define _paleta_hpp
 #if __cplusplus >= 201103L
 //---necessary libraries------------------------------------------------------------------------------------------------
-#include <cstdint>  // for uint8_t
+#include <cstdint>  // for uint_fast8_t
 #include <ostream>  // for std::ostream
 #include <iostream> // for std::cout, std::clog, std::cerr
 //---Paleta-------------------------------------------------------------------------------------------------------------
@@ -93,9 +93,9 @@ namespace fmz
 
   class Color;
 
-  class Foreground;
+  struct Foreground;
 
-  class Background;
+  struct Background;
 
   inline
   std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept;
@@ -138,8 +138,8 @@ namespace fmz
     struct RGB final
     {
       inline constexpr
-      RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept;
-      uint8_t r, g, b;
+      RGB(uint_fast8_t red, uint_fast8_t green, uint_fast8_t blue) noexcept;
+      uint_fast8_t r, g, b;
     };
 
     enum class Basic
@@ -195,9 +195,8 @@ namespace fmz
     friend std::ostream& operator<<(std::ostream&, Background) noexcept;
   };
 
-  class Background
+  struct Background
   {
-  public:
     template<typename C>
     inline constexpr
     Background(C color) noexcept;
@@ -205,9 +204,8 @@ namespace fmz
     Color color;
   };
 
-  class Foreground
+  struct Foreground
   {
-  public:
     template<typename C>
     inline constexpr
     Foreground(C color) noexcept;
@@ -262,7 +260,7 @@ namespace fmz
   struct Clear final {};
 //---------------------------------------------------------------------------------------------------------------------- 
   constexpr
-  Color::RGB::RGB(uint8_t red, uint8_t green, uint8_t blue) noexcept :
+  Color::RGB::RGB(uint_fast8_t red, uint_fast8_t green, uint_fast8_t blue) noexcept :
     r(red),
     g(green),
     b(blue)
