@@ -52,7 +52,9 @@ namespace fmz
   template<typename Specifiers>
   auto terminal_format(Specifiers specifiers) -> Format;
 
-  struct Clear;
+  struct {} reset;
+
+  struct {} clear;
 
   enum class Colors
   {
@@ -90,8 +92,8 @@ namespace fmz
 
   enum class Strike
   {
-    False,
-    True
+    None,
+    Single
   };
 
   enum class Underline
@@ -110,8 +112,6 @@ namespace fmz
   struct Foreground;
 
   struct Background;
-
-  struct Reset;
 
   inline
   std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept;
@@ -138,17 +138,21 @@ namespace fmz
   std::ostream& operator<<(std::ostream& ostream, const Format& format) noexcept;
 
   inline
-  std::ostream& operator<<(std::ostream& ostream, Reset) noexcept;
+  std::ostream& operator<<(std::ostream& ostream, decltype(reset)) noexcept;
 
   inline
-  std::ostream& operator<<(std::ostream& ostream, Clear) noexcept;
+  std::ostream& operator<<(std::ostream& ostream, decltype(clear)) noexcept;
 
   namespace _version
   {
-    constexpr long MAJOR  = 000;
-    constexpr long MINOR  = 001;
-    constexpr long PATCH  = 000;
-    constexpr long NUMBER = (MAJOR * 1000 + MINOR) * 1000 + PATCH;
+#   define FMZ_VERSION_MAJOR  000
+#   define FMZ_VERSION_MINOR  000
+#   define FMZ_VERSION_PATCH  000
+#   define FMZ_VERSION_NUMBER ((FMZ_VERSION_MAJOR * 1000 + FMZ_VERSION_MINOR) * 1000 + FMZ_VERSION_PATCH)
+    constexpr long MAJOR  = FMZ_VERSION_MAJOR;
+    constexpr long MINOR  = FMZ_VERSION_MINOR;
+    constexpr long PATCH  = FMZ_VERSION_PATCH;
+    constexpr long NUMBER = FMZ_VERSION_NUMBER;
   }
 //----------------------------------------------------------------------------------------------------------------------
   namespace _impl
@@ -183,7 +187,7 @@ namespace fmz
       
       constexpr
       _color(const size_t red_, const size_t green_, const size_t blue_) noexcept :
-        _type(_type_t::RGB),
+        _type(_color_type::RGB),
         _data(_impl::_RGB{
           static_cast<uint_fast8_t>(red_),
           static_cast<uint_fast8_t>(green_),
@@ -193,19 +197,19 @@ namespace fmz
 
       constexpr
       _color(const Colors basic_color_) noexcept :
-        _type(_type_t::BASIC),
+        _type(_color_type::BASIC),
         _data(basic_color_)
       {}
 
       constexpr inline
-      _color(Reset) noexcept;
+      _color(decltype(reset)) noexcept;
 
       constexpr
       _color() noexcept :
-        _type(_type_t::KEEP)
+        _type(_color_type::KEEP)
       {}
 
-      enum class _type_t
+      enum class _color_type
       {
         KEEP,
         DEFAULT,
@@ -213,11 +217,11 @@ namespace fmz
         RGB
       } _type;
 
-      union _data_t
+      union _color_data
       {
-        constexpr _data_t(Colors basic_color) noexcept : _basic(basic_color) {}
-        constexpr _data_t(_impl::_RGB    rgb) noexcept : _rgb(rgb)          {}
-        constexpr _data_t()            noexcept : _rgb{0, 0, 0} {}
+        constexpr _color_data(Colors basic_color) noexcept : _basic(basic_color) {}
+        constexpr _color_data(_impl::_RGB    rgb) noexcept : _rgb(rgb)           {}
+        constexpr _color_data()                   noexcept : _rgb{0, 0, 0}       {}
         Colors      _basic;
         _impl::_RGB _rgb;
       } _data;
@@ -271,7 +275,7 @@ namespace fmz
     template<typename F, typename... F_>
     inline void _format_dispatch(F format, F_... remaining_formats) noexcept;
     inline void _format_dispatch()                                  noexcept {};
-    inline void _format(Reset)                   noexcept;
+    inline void _format(decltype(reset))                   noexcept;
     inline void _format(Foreground    color)     noexcept;
     inline void _format(Background    color)     noexcept;
     inline void _format(Weight        weight)    noexcept;
@@ -294,18 +298,12 @@ namespace fmz
       using namespace fmz;                                \
       return _impl::_backdoor::_make_Format(__VA_ARGS__); \
     })
-
-    
-
-  struct Clear {};
-
-  struct Reset {};
 //----------------------------------------------------------------------------------------------------------------------
   namespace _impl
   {
     constexpr
-    _color::_color(Reset) noexcept :
-      _type(_type_t::DEFAULT)
+    _color::_color(decltype(reset)) noexcept :
+      _type(_color_type::DEFAULT)
     {}
 
 #define _fmz_impl_MAKE_TYPE_BACKDOOR(INTO, TYPE) using TYPE = INTO::TYPE;
@@ -354,12 +352,12 @@ namespace fmz
     static char buffer[16];
     switch (_color._type)
     {
-    case _impl::_color::_type_t::DEFAULT:
+    case _impl::_color::_color_type::DEFAULT:
       return "\033[49m";
-    case _impl::_color::_type_t::BASIC:
+    case _impl::_color::_color_type::BASIC:
       std::sprintf(buffer, "\033[%dm", static_cast<int>(_color._data._basic) + 10);
       return buffer;
-    case _impl::_color::_type_t::RGB:
+    case _impl::_color::_color_type::RGB:
       std::sprintf(buffer, "\033[48;2;%d;%d;%dm", _color._data._rgb.r, _color._data._rgb.g, _color._data._rgb.b);
       return buffer;
     default:
@@ -378,12 +376,12 @@ namespace fmz
     static char buffer[16];
     switch (_color._type)
     {
-    case _impl::_color::_type_t::DEFAULT:
+    case _impl::_color::_color_type::DEFAULT:
       return "\033[39m";
-    case _impl::_color::_type_t::BASIC:
+    case _impl::_color::_color_type::BASIC:
       std::sprintf(buffer, "\033[%dm", static_cast<int>(_color._data._basic));
       return buffer;
-    case _impl::_color::_type_t::RGB:
+    case _impl::_color::_color_type::RGB:
       std::sprintf(buffer, "\033[48;2;%d;%d;%dm", _color._data._rgb.r, _color._data._rgb.g, _color._data._rgb.b);
       return buffer;
     default:
@@ -404,13 +402,13 @@ namespace fmz
     _format_dispatch(remaining_formats...);
   }
 
-  void Format::_format(Reset) noexcept
+  void Format::_format(decltype(reset)) noexcept
   {
-    _foreground = Reset();
-    _background = Reset();
+    _foreground = decltype(reset)();
+    _background = decltype(reset)();
     _weight     = Weight::Normal;
     _italic     = Italic::False;
-    _strike     = Strike::False;
+    _strike     = Strike::None;
     _underline  = Underline::None;
     _overline   = Overline::None;
   }
@@ -452,12 +450,12 @@ namespace fmz
 
   void Format::_format(const Format& format) noexcept
   {
-    if (_impl::_backdoor::_color(format._foreground)._type != _impl::_color::_type_t::KEEP)
+    if (_impl::_backdoor::_color(format._foreground)._type != _impl::_color::_color_type::KEEP)
     {
       _foreground = format._foreground;
     }
     
-    if (_impl::_backdoor::_color(format._background)._type != _impl::_color::_type_t::KEEP)
+    if (_impl::_backdoor::_color(format._background)._type != _impl::_color::_color_type::KEEP)
     {
       _background = format._background;
     }
@@ -535,9 +533,9 @@ namespace fmz
   {
     switch (strike_)
     {
-    case Strike::True:
+    case Strike::Single:
       return ostream_ << "\033[9m";
-    case Strike::False:
+    case Strike::None:
       return ostream_ << "\033[29m";
     default:
       return ostream_;
@@ -575,7 +573,7 @@ namespace fmz
   };
 
   inline
-  std::ostream& operator<<(std::ostream& ostream_, const Reset) noexcept
+  std::ostream& operator<<(std::ostream& ostream_, const decltype(reset)) noexcept
   {
     return ostream_ << "\033[0m";
   };
@@ -595,7 +593,7 @@ namespace fmz
   };
 
   inline
-  std::ostream& operator<<(std::ostream& ostream_, const Clear) noexcept
+  std::ostream& operator<<(std::ostream& ostream_, const decltype(clear)) noexcept
   {
     if ((ostream_.rdbuf() == std::cout.rdbuf()) ||
         (ostream_.rdbuf() == std::cerr.rdbuf()) ||
