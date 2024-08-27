@@ -40,14 +40,12 @@ namespace fmz
 {
   struct Format;
 
-  template<typename Specifiers>
-  auto terminal_format(Specifiers specifiers) -> Format;
+# define terminal_format(...)
 
-  struct {} reset;
+  enum { clear };
+  enum { reset };
 
-  struct {} clear;
-
-  enum class Colors
+  enum class Colors : uint_fast8_t
   {
     Black           = 30,
     Red             = 31,
