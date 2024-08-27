@@ -36,7 +36,10 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #include <ostream>  // for std::ostream
 #include <iostream> // for std::cout, std::clog, std::cerr
 //---Paleta-------------------------------------------------------------------------------------------------------------
-namespace fmz
+namespace stz
+{
+inline namespace fmz
+//----------------------------------------------------------------------------------------------------------------------
 {
   struct Format;
 
@@ -66,33 +69,35 @@ namespace fmz
     Bright_White    = 97
   };
     
-  enum class Weight
+  struct RGB final
   {
-    Faint,
-    Normal,
-    Bold
+    uint_fast8_t r, g, b;
   };
 
-  enum class Italic
+  enum class Font : uint_fast8_t
   {
-    False,
-    True
+    Light,
+    Regular,
+    Bold,
+    Light_Italic,
+    Regular_Italic,
+    Bold_Italic
   };
 
-  enum class Strike
-  {
-    None,
-    Single
-  };
-
-  enum class Underline
+  enum class Underline : uint_fast8_t
   {
     None,
     Single,
     Double
   };
 
-  enum class Overline
+  enum class Strike : uint_fast8_t
+  {
+    None,
+    Single
+  };
+
+  enum class Overline : uint_fast8_t
   {
     None,
     Single
@@ -102,42 +107,13 @@ namespace fmz
 
   struct Background;
 
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Foreground foreground) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Background background) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Weight weight) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Italic italic) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Strike strike) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Underline underline) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, Overline overline) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, const Format& format) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, decltype(reset)) noexcept;
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream, decltype(clear)) noexcept;
-
   namespace _version
   {
 #   define FMZ_VERSION_MAJOR  000
 #   define FMZ_VERSION_MINOR  000
 #   define FMZ_VERSION_PATCH  000
-#   define FMZ_VERSION_NUMBER ((FMZ_VERSION_MAJOR * 1000 + FMZ_VERSION_MINOR) * 1000 + FMZ_VERSION_PATCH)
+#   define FMZ_VERSION_NUMBER ((FMZ_VERSION_MAJOR  * 1000 + FMZ_VERSION_MINOR) * 1000 + FMZ_VERSION_PATCH)
+
     constexpr long MAJOR  = FMZ_VERSION_MAJOR;
     constexpr long MINOR  = FMZ_VERSION_MINOR;
     constexpr long PATCH  = FMZ_VERSION_PATCH;
@@ -146,38 +122,43 @@ namespace fmz
 //----------------------------------------------------------------------------------------------------------------------
   namespace _impl
   {
-    struct _RGB final
-    {
-      uint_fast8_t r, g, b;
-    };
+# if defined(__clang__)
+#   define _stz_impl_PRAGMA(PRAGMA) _Pragma(#PRAGMA)
+#   define _stz_impl_CLANG_IGNORE(WARNING, ...)          \
+      _stz_impl_PRAGMA(clang diagnostic push)            \
+      _stz_impl_PRAGMA(clang diagnostic ignored WARNING) \
+      __VA_ARGS__                                        \
+      _stz_impl_PRAGMA(clang diagnostic pop)
+#endif
+
+// support from clang 12.0.0 and GCC 10.1 onward
+# if defined(__clang__) and (__clang_major__ >= 12)
+# if __cplusplus < 202002L
+#   define _stz_impl_LIKELY   _stz_impl_CLANG_IGNORE("-Wc++20-extensions", [[likely]])
+# else
+#   define _stz_impl_LIKELY   [[likely]]
+# endif
+# elif defined(__GNUC__) and (__GNUC__ >= 10)
+#   define _stz_impl_LIKELY   [[likely]]
+# else
+#   define _stz_impl_LIKELY
+# endif
+
+// support from clang 3.9.0 and GCC 4.7.3 onward
+# if defined(__clang__)
+#   define _stz_impl_EXPECTED(CONDITION) (__builtin_expect(static_cast<bool>(CONDITION), 1)) _stz_impl_LIKELY
+# elif defined(__GNUC__)
+#   define _stz_impl_EXPECTED(CONDITION) (__builtin_expect(static_cast<bool>(CONDITION), 1)) _stz_impl_LIKELY
+# else
+#   define _stz_impl_EXPECTED(CONDITION) (CONDITION) _stz_impl_LIKELY
+# endif
 
     struct _color final
     {
-      enum class Basic
-      {
-        Black           = 30,
-        Red             = 31,
-        Green           = 32,
-        Yellow          = 33,
-        Blue            = 34,
-        Magenta         = 35,
-        Cyan            = 36,
-        White           = 37,
-        Gray            = 90,
-        Bright_Black    = Gray,
-        Bright_Red      = 91,
-        Bright_Green    = 92,
-        Bright_Yellow   = 93,
-        Bright_Blue     = 94,
-        Bright_Magenta  = 95,
-        Bright_Cyan     = 96,
-        Bright_White    = 97
-      };
-      
       constexpr
       _color(const size_t red_, const size_t green_, const size_t blue_) noexcept :
         _type(_color_type::RGB),
-        _data(_impl::_RGB{
+        _data(RGB{
           static_cast<uint_fast8_t>(red_),
           static_cast<uint_fast8_t>(green_),
           static_cast<uint_fast8_t>(blue_)
@@ -190,8 +171,10 @@ namespace fmz
         _data(basic_color_)
       {}
 
-      constexpr inline
-      _color(decltype(reset)) noexcept;
+      constexpr
+      _color(decltype(reset)) noexcept :
+        _type(_color_type::DEFAULT)
+      {}
 
       constexpr
       _color() noexcept :
@@ -209,10 +192,10 @@ namespace fmz
       union _color_data
       {
         constexpr _color_data(Colors basic_color) noexcept : _basic(basic_color) {}
-        constexpr _color_data(_impl::_RGB    rgb) noexcept : _rgb(rgb)           {}
-        constexpr _color_data()                   noexcept : _rgb{0, 0, 0}       {}
-        Colors      _basic;
-        _impl::_RGB _rgb;
+        constexpr _color_data(RGB            rgb) noexcept : _rgb(rgb)           {}
+        constexpr _color_data(                  ) noexcept : _rgb{0, 0, 0}       {}
+        Colors _basic;
+        RGB    _rgb;
       } _data;
     };
 
@@ -224,10 +207,7 @@ namespace fmz
     template<typename... C>
     inline constexpr
     Background(C... color) noexcept;
-      
-    inline explicit
-    operator const char*() const noexcept;
-
+    
   private:
     friend _impl::_backdoor;
     _impl::_color _color;
@@ -238,15 +218,12 @@ namespace fmz
     template<typename... C>
     inline constexpr
     Foreground(C... color) noexcept;
-      
-    inline explicit
-    operator const char*() const noexcept;
-
+    
   private:
     friend _impl::_backdoor;
     _impl::_color _color;
   };
-
+//----------------------------------------------------------------------------------------------------------------------
   struct Format
   {
   private:
@@ -255,11 +232,10 @@ namespace fmz
     Format(F... formats) noexcept;
     Foreground _foreground = _impl::_color();
     Background _background = _impl::_color();
-    Weight     _weight     = static_cast<Weight>(-1);
-    Italic     _italic     = static_cast<Italic>(-1);
-    Strike     _strike     = static_cast<Strike>(-1);
-    Underline  _underline  = static_cast<Underline>(-1);
-    Overline   _overline   = static_cast<Overline>(-1);
+    Font       _font       = static_cast<Font>(static_cast<uint_fast8_t>(-1));
+    Underline  _underline  = static_cast<Underline>(static_cast<uint_fast8_t>(-1));
+    Strike     _strike     = static_cast<Strike>(static_cast<uint_fast8_t>(-1));
+    Overline   _overline   = static_cast<Overline>(static_cast<uint_fast8_t>(-1));
 
     template<typename F, typename... F_>
     inline void _format_dispatch(F format, F_... remaining_formats) noexcept;
@@ -267,36 +243,32 @@ namespace fmz
     inline void _format(decltype(reset))                   noexcept;
     inline void _format(Foreground    color)     noexcept;
     inline void _format(Background    color)     noexcept;
-    inline void _format(Weight        weight)    noexcept;
-    inline void _format(Italic        italic)    noexcept;
-    inline void _format(Strike        strike)    noexcept;
+    inline void _format(Font          font)      noexcept;
     inline void _format(Underline     underline) noexcept;
+    inline void _format(Strike        strike)    noexcept;
     inline void _format(Overline      overline)  noexcept;
     inline void _format(const Format& format)    noexcept;
     friend _impl::_backdoor;
   };
+//----------------------------------------------------------------------------------------------------------------------
+# undef terminal_format
 
-  template<typename Specifiers>
-  auto terminal_format(const Specifiers specifiers_) -> Format
+  auto terminal_format(const Format& format_) noexcept -> Format
   {
-    return specifiers_();
+    return format_;
   }
 
-# define terminal_format(...)                             \
-    terminal_format([]() -> fmz::Format {                 \
-      using namespace fmz;                                \
-      return _impl::_backdoor::_make_Format(__VA_ARGS__); \
-    })
+# define terminal_format(...)                                       \
+    terminal_format([]() -> stz::fmz::Format                        \
+    {                                                               \
+      using namespace stz::fmz;                                     \
+      return stz::fmz::_impl::_backdoor::_make_Format(__VA_ARGS__); \
+    }())
 //----------------------------------------------------------------------------------------------------------------------
   namespace _impl
   {
-    constexpr
-    _color::_color(decltype(reset)) noexcept :
-      _type(_color_type::DEFAULT)
-    {}
-
-#define _fmz_impl_MAKE_TYPE_BACKDOOR(INTO, TYPE) using TYPE = INTO::TYPE;
-#define _fmz_impl_MAKE_DATA_BACKDOOR(INTO, DATA) \
+#define _stz_impl_MAKE_TYPE_BACKDOOR(INTO, TYPE) using TYPE = INTO::TYPE;
+#define _stz_impl_MAKE_DATA_BACKDOOR(INTO, DATA) \
     static constexpr                             \
     auto DATA(const INTO& into_) noexcept        \
       -> decltype(INTO::DATA)                    \
@@ -304,7 +276,7 @@ namespace fmz
       return into_.DATA;                         \
     }
 
-#define _fmz_impl_MAKE_CONS_BACKDOOR(INTO) \
+#define _stz_impl_MAKE_CONS_BACKDOOR(INTO) \
     template<typename... A>                \
     static constexpr                       \
     INTO _make_##INTO(A... a) noexcept     \
@@ -312,21 +284,20 @@ namespace fmz
       return INTO(a...);                   \
     }
 
-    struct _backdoor : public Format
+    struct _backdoor
     {
-      _fmz_impl_MAKE_CONS_BACKDOOR(Format)
+      _stz_impl_MAKE_CONS_BACKDOOR(Format)
 
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _foreground)
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _background)
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _weight)
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _italic)
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _strike)
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _underline)
-      _fmz_impl_MAKE_DATA_BACKDOOR(Format, _overline)
+      _stz_impl_MAKE_DATA_BACKDOOR(Format, _foreground)
+      _stz_impl_MAKE_DATA_BACKDOOR(Format, _background)
+      _stz_impl_MAKE_DATA_BACKDOOR(Format, _font)
+      _stz_impl_MAKE_DATA_BACKDOOR(Format, _underline)
+      _stz_impl_MAKE_DATA_BACKDOOR(Format, _strike)
+      _stz_impl_MAKE_DATA_BACKDOOR(Format, _overline)
 
-      _fmz_impl_MAKE_DATA_BACKDOOR(Foreground, _color)
+      _stz_impl_MAKE_DATA_BACKDOOR(Foreground, _color)
 
-      _fmz_impl_MAKE_DATA_BACKDOOR(Background, _color)
+      _stz_impl_MAKE_DATA_BACKDOOR(Background, _color)
     };
   }
 //----------------------------------------------------------------------------------------------------------------------
@@ -336,48 +307,12 @@ namespace fmz
     _color(color_...)
   {}
   
-  Background::operator const char *() const noexcept
-  {
-    static char buffer[16];
-    switch (_color._type)
-    {
-    case _impl::_color::_color_type::DEFAULT:
-      return "\033[49m";
-    case _impl::_color::_color_type::BASIC:
-      std::sprintf(buffer, "\033[%dm", static_cast<int>(_color._data._basic) + 10);
-      return buffer;
-    case _impl::_color::_color_type::RGB:
-      std::sprintf(buffer, "\033[48;2;%d;%d;%dm", _color._data._rgb.r, _color._data._rgb.g, _color._data._rgb.b);
-      return buffer;
-    default:
-      return "";
-    }
-  }
-  
   template<typename... C>
   constexpr
   Foreground::Foreground(C... color_) noexcept :
     _color(color_...)
   {}
   
-  Foreground::operator const char *() const noexcept
-  {
-    static char buffer[16];
-    switch (_color._type)
-    {
-    case _impl::_color::_color_type::DEFAULT:
-      return "\033[39m";
-    case _impl::_color::_color_type::BASIC:
-      std::sprintf(buffer, "\033[%dm", static_cast<int>(_color._data._basic));
-      return buffer;
-    case _impl::_color::_color_type::RGB:
-      std::sprintf(buffer, "\033[48;2;%d;%d;%dm", _color._data._rgb.r, _color._data._rgb.g, _color._data._rgb.b);
-      return buffer;
-    default:
-      return "";
-    }
-  }
-
   template<typename... F>
   Format::Format(F... formats) noexcept
   {
@@ -395,10 +330,9 @@ namespace fmz
   {
     _foreground = decltype(reset)();
     _background = decltype(reset)();
-    _weight     = Weight::Normal;
-    _italic     = Italic::False;
-    _strike     = Strike::None;
+    _font       = Font::Regular;
     _underline  = Underline::None;
+    _strike     = Strike::None;
     _overline   = Overline::None;
   }
 
@@ -412,24 +346,19 @@ namespace fmz
     _foreground = foreground_;
   }
 
-  void Format::_format(Weight weight_) noexcept
+  void Format::_format(Font font_) noexcept
   {
-    _weight = weight_;
-  }
-
-  void Format::_format(Italic italic_) noexcept
-  {
-    _italic = italic_;
-  }
-
-  void Format::_format(Strike strike_) noexcept
-  {
-    _strike = strike_;
+    _font = font_;
   }
 
   void Format::_format(Underline underline_) noexcept
   {
     _underline = underline_;
+  }
+
+  void Format::_format(Strike strike_) noexcept
+  {
+    _strike = strike_;
   }
 
   void Format::_format(Overline overline_) noexcept
@@ -449,116 +378,132 @@ namespace fmz
       _background = format._background;
     }
     
-    if (format._weight != static_cast<Weight>(-1))
+    if (format._font != static_cast<Font>(static_cast<uint_fast8_t>(-1)))
     {
-      _weight = format._weight;
+      _font = format._font;
     }
     
-    if (format._italic != static_cast<Italic>(-1))
-    {
-      _italic = format._italic;
-    }
-    
-    if (format._strike != static_cast<Strike>(-1))
-    {
-      _strike = format._strike;
-    }
-    
-    if (format._underline != static_cast<Underline>(-1))
+    if (format._underline != static_cast<Underline>(static_cast<uint_fast8_t>(-1)))
     {
       _underline = format._underline;
     }
     
-    if (format._overline != static_cast<Overline>(-1))
+    if (format._strike != static_cast<Strike>(static_cast<uint_fast8_t>(-1)))
+    {
+      _strike = format._strike;
+    }
+    
+    if (format._overline != static_cast<Overline>(static_cast<uint_fast8_t>(-1)))
     {
       _overline = format._overline;
     }
   }
 
   inline
-  std::ostream& operator<<(std::ostream& ostream_, const Foreground foreground_) noexcept
+  std::ostream& operator<<(std::ostream& ostream_, const Format& format_) noexcept
   {
-    return ostream_ << static_cast<const char*>(foreground_);
-  };
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream_, const Background background_) noexcept
-  {
-    return ostream_ << static_cast<const char*>(background_);
-  };
-
-  inline
-  std::ostream& operator<<(std::ostream& ostream_, const Weight weight_) noexcept
-  {
-    switch (weight_)
+    const auto& fg_color = _impl::_backdoor::_color(_impl::_backdoor::_foreground(format_));
+    switch (fg_color._type)
     {
-    case Weight::Faint:
-      return ostream_ << "\033[2m";
-    case Weight::Normal:
-      return ostream_ << "\033[22m";
-    case Weight::Bold:
-      return ostream_ << "\033[1m";
+    case _impl::_color::_color_type::DEFAULT:
+      ostream_ << "\033[39m";
+      break;
+    case _impl::_color::_color_type::BASIC:
+      ostream_ << "\033[" << static_cast<int>(fg_color._data._basic) << "m";
+      break;
+    case _impl::_color::_color_type::RGB:
+      ostream_ << "\033[38;2;";
+      ostream_ << fg_color._data._rgb.r << ";";
+      ostream_ << fg_color._data._rgb.g << ";";
+      ostream_ << fg_color._data._rgb.b << "m";
+      break;
     default:
-      return ostream_;
+      break;
     }
-  };
 
-  inline
-  std::ostream& operator<<(std::ostream& ostream_, const Italic italic_) noexcept
-  {
-    switch (italic_)
+    const auto& bg_color = _impl::_backdoor::_color(_impl::_backdoor::_background(format_));
+    switch (bg_color._type)
     {
-    case Italic::True:
-      return ostream_ << "\033[3m";
-    case Italic::False:
-      return ostream_ << "\033[23m";
+    case _impl::_color::_color_type::DEFAULT:
+      ostream_ << "\033[49m";
+      break;
+    case _impl::_color::_color_type::BASIC:
+      ostream_ << "\033[" << (static_cast<int>(bg_color._data._basic) + 10) << "m";
+      break;
+    case _impl::_color::_color_type::RGB:
+      ostream_ << "\033[48;2;";
+      ostream_ << bg_color._data._rgb.r << ";";
+      ostream_ << bg_color._data._rgb.g << ";";
+      ostream_ << bg_color._data._rgb.b << "m";
+      break;
     default:
-      return ostream_;
+      break;
     }
-  };
 
-  inline
-  std::ostream& operator<<(std::ostream& ostream_, const Strike strike_) noexcept
-  {
-    switch (strike_)
+    switch (_impl::_backdoor::_font(format_))
+    {
+    case Font::Light:
+      ostream_ << "\033[2m\033[23m";
+      break;
+    case Font::Regular:
+      ostream_ << "\033[22m\033[23m";
+      break;
+    case Font::Bold:
+      ostream_ << "\033[1m\033[23m";
+      break;
+    case Font::Light_Italic:
+      ostream_ << "\033[2m\033[3m";
+      break;
+    case Font::Regular_Italic:
+      ostream_ << "\033[22m\033[3m";
+      break;
+    case Font::Bold_Italic:
+      ostream_ << "\033[1m\033[3m";
+      break;
+    default:
+      break;
+    }
+    
+    switch (_impl::_backdoor::_strike(format_))
     {
     case Strike::Single:
-      return ostream_ << "\033[9m";
+      ostream_ << "\033[9m";
+      break;
     case Strike::None:
-      return ostream_ << "\033[29m";
+      ostream_ << "\033[29m";
+      break;
     default:
-      return ostream_;
+      break;
     }
-  };
 
-  inline
-  std::ostream& operator<<(std::ostream& ostream_, const Underline underline_) noexcept
-  {
-    switch (underline_)
+    switch (_impl::_backdoor::_underline(format_))
     {
     case Underline::None:
-      return ostream_ << "\033[24m";
+      ostream_ << "\033[24m";
+      break;
     case Underline::Single:
-      return ostream_ << "\033[4m";
+      ostream_ << "\033[4m";
+      break;
     case Underline::Double:
-      return ostream_ << "\033[21m";
+      ostream_ << "\033[21m";
+      break;
     default:
-      return ostream_;
+      break;
     }
-  };
 
-  inline
-  std::ostream& operator<<(std::ostream& ostream_, const Overline overline_) noexcept
-  {
-    switch (overline_)
+    switch (_impl::_backdoor::_overline(format_))
     {
     case Overline::None:
-      return ostream_ << "\033[55m";
+      ostream_ << "\033[55m";
+      break;
     case Overline::Single:
-      return ostream_ << "\033[53m";
+      ostream_ << "\033[53m";
+      break;
     default:
-      return ostream_;
+      break;
     }
+
+    return ostream_;
   };
 
   inline
@@ -568,33 +513,29 @@ namespace fmz
   };
 
   inline
-  std::ostream& operator<<(std::ostream& ostream_, const Format& format_) noexcept
-  {
-    ostream_ << _impl::_backdoor::_foreground(format_);
-    ostream_ << _impl::_backdoor::_background(format_);
-    ostream_ << _impl::_backdoor::_weight(format_);
-    ostream_ << _impl::_backdoor::_italic(format_);
-    ostream_ << _impl::_backdoor::_strike(format_);
-    ostream_ << _impl::_backdoor::_underline(format_);
-    ostream_ << _impl::_backdoor::_overline(format_);
-
-    return ostream_;
-  };
-
-  inline
   std::ostream& operator<<(std::ostream& ostream_, const decltype(clear)) noexcept
   {
-    if ((ostream_.rdbuf() == std::cout.rdbuf()) ||
-        (ostream_.rdbuf() == std::cerr.rdbuf()) ||
-        (ostream_.rdbuf() == std::clog.rdbuf()))
+    if _stz_impl_EXPECTED(
+      (ostream_.rdbuf() == std::cout.rdbuf()) ||
+      (ostream_.rdbuf() == std::cerr.rdbuf()) ||
+      (ostream_.rdbuf() == std::clog.rdbuf()))
     {
       ostream_ << "\033[H\033[J";
     }
 
     return ostream_;
   }
-//----------------------------------------------------------------------------------------------------------------------
 }
+}
+//----------------------------------------------------------------------------------------------------------------------
+#undef _stz_impl_PRAGMA
+#undef _stz_impl_CLANG_IGNORE
+#undef _stz_impl_LIKELY
+#undef _stz_impl_EXPECTED
+#undef _stz_impl_MAKE_TYPE_BACKDOOR
+#undef _stz_impl_MAKE_DATA_BACKDOOR
+#undef _stz_impl_MAKE_CONS_BACKDOOR
+//----------------------------------------------------------------------------------------------------------------------
 #else
 #error "Paleta: Support for ISO C++11 is required"
 #endif
