@@ -32,7 +32,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #define _paleta_hpp
 #if __cplusplus >= 201103L
 //---necessary libraries------------------------------------------------------------------------------------------------
-#include <cstdint>  // for uint8_t, uint_fast8_t
+#include <cstdint>  // for uint_fast8_t
 #include <ostream>  // for std::ostream
 #include <iostream> // for std::cout, std::clog, std::cerr
 //---Paleta-------------------------------------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ inline namespace fmz
     Regular,
     Bold,
     Light_Italic,
-    Regular_Italic,
+    Italic,
     Bold_Italic
   };
 
@@ -199,6 +199,34 @@ inline namespace fmz
       } _data;
     };
 
+    template<typename T1, typename T2>
+    constexpr
+    auto _cvt(T2 data) -> typename std::enable_if<std::is_same<T1, T2>::value == true, T1>::type
+    {
+      return data;
+    }
+
+    template<typename T1, typename T2>
+    constexpr
+    auto _cvt(T2 data) -> typename std::enable_if<std::is_same<T1, T2>::value != true, T1>::type
+    {
+      return T1();
+    }
+
+    template<typename type>
+    constexpr
+    type _get()
+    {
+      return type();
+    }
+
+    template<typename type, typename T, typename... types>
+    constexpr
+    type _get(T data_, types... data_n_)
+    {
+      return std::is_same<type, T>::value ? _cvt<type>(data_) : _get<type>(data_n_...);
+    }
+
     struct _backdoor;
   }
 //----------------------------------------------------------------------------------------------------------------------
@@ -226,68 +254,46 @@ inline namespace fmz
 //----------------------------------------------------------------------------------------------------------------------
   struct Format
   {
-  private:
     template<typename... F>
-    inline
+    inline constexpr
     Format(F... formats) noexcept;
-    Foreground _foreground = _impl::_color();
-    Background _background = _impl::_color();
-    Font       _font       = static_cast<Font>(static_cast<uint_fast8_t>(-1));
-    Underline  _underline  = static_cast<Underline>(static_cast<uint_fast8_t>(-1));
-    Strike     _strike     = static_cast<Strike>(static_cast<uint_fast8_t>(-1));
-    Overline   _overline   = static_cast<Overline>(static_cast<uint_fast8_t>(-1));
 
-    template<typename F, typename... F_>
-    inline void _format_dispatch(F format, F_... remaining_formats) noexcept;
-    inline void _format_dispatch()                                  noexcept {};
-    inline void _format(decltype(reset))                   noexcept;
-    inline void _format(Foreground    color)     noexcept;
-    inline void _format(Background    color)     noexcept;
-    inline void _format(Font          font)      noexcept;
-    inline void _format(Underline     underline) noexcept;
-    inline void _format(Strike        strike)    noexcept;
-    inline void _format(Overline      overline)  noexcept;
-    inline void _format(const Format& format)    noexcept;
+  private:
     friend _impl::_backdoor;
+    const Foreground _foreground = _impl::_color();
+    const Background _background = _impl::_color();
+    const Font       _font       = static_cast<Font>(static_cast<uint_fast8_t>(-1));
+    const Underline  _underline  = static_cast<Underline>(static_cast<uint_fast8_t>(-1));
+    const Strike     _strike     = static_cast<Strike>(static_cast<uint_fast8_t>(-1));
+    const Overline   _overline   = static_cast<Overline>(static_cast<uint_fast8_t>(-1));
   };
 //----------------------------------------------------------------------------------------------------------------------
 # undef terminal_format
-
+  inline constexpr
   auto terminal_format(const Format& format_) noexcept -> Format
   {
     return format_;
   }
 
-# define terminal_format(...)                                       \
-    terminal_format([]() -> stz::fmz::Format                        \
-    {                                                               \
-      using namespace stz::fmz;                                     \
-      return stz::fmz::_impl::_backdoor::_make_Format(__VA_ARGS__); \
+# define terminal_format(...)                \
+    terminal_format([]() -> stz::fmz::Format \
+    {                                        \
+      using namespace stz::fmz;              \
+      return Format(__VA_ARGS__);            \
     }())
 //----------------------------------------------------------------------------------------------------------------------
   namespace _impl
   {
 #define _stz_impl_MAKE_TYPE_BACKDOOR(INTO, TYPE) using TYPE = INTO::TYPE;
-#define _stz_impl_MAKE_DATA_BACKDOOR(INTO, DATA) \
-    static constexpr                             \
-    auto DATA(const INTO& into_) noexcept        \
-      -> decltype(INTO::DATA)                    \
-    {                                            \
-      return into_.DATA;                         \
-    }
-
-#define _stz_impl_MAKE_CONS_BACKDOOR(INTO) \
-    template<typename... A>                \
-    static constexpr                       \
-    INTO _make_##INTO(A... a) noexcept     \
-    {                                      \
-      return INTO(a...);                   \
+#define _stz_impl_MAKE_DATA_BACKDOOR(INTO, DATA)                                           \
+    static constexpr                                                                       \
+    auto DATA(const INTO& into_) noexcept -> std::remove_const<decltype(INTO::DATA)>::type \
+    {                                                                                      \
+      return into_.DATA;                                                                   \
     }
 
     struct _backdoor
     {
-      _stz_impl_MAKE_CONS_BACKDOOR(Format)
-
       _stz_impl_MAKE_DATA_BACKDOOR(Format, _foreground)
       _stz_impl_MAKE_DATA_BACKDOOR(Format, _background)
       _stz_impl_MAKE_DATA_BACKDOOR(Format, _font)
@@ -314,90 +320,15 @@ inline namespace fmz
   {}
   
   template<typename... F>
-  Format::Format(F... formats) noexcept
-  {
-    _format_dispatch(formats...);
-  }
-
-  template<typename F, typename... F_>
-  void Format::_format_dispatch(F format_, F_... remaining_formats) noexcept
-  {
-    _format(format_);
-    _format_dispatch(remaining_formats...);
-  }
-
-  void Format::_format(decltype(reset)) noexcept
-  {
-    _foreground = decltype(reset)();
-    _background = decltype(reset)();
-    _font       = Font::Regular;
-    _underline  = Underline::None;
-    _strike     = Strike::None;
-    _overline   = Overline::None;
-  }
-
-  void Format::_format(Background background_) noexcept
-  {
-    _background = background_;
-  }
-
-  void Format::_format(Foreground foreground_) noexcept
-  {
-    _foreground = foreground_;
-  }
-
-  void Format::_format(Font font_) noexcept
-  {
-    _font = font_;
-  }
-
-  void Format::_format(Underline underline_) noexcept
-  {
-    _underline = underline_;
-  }
-
-  void Format::_format(Strike strike_) noexcept
-  {
-    _strike = strike_;
-  }
-
-  void Format::_format(Overline overline_) noexcept
-  {
-    _overline = overline_;
-  }
-
-  void Format::_format(const Format& format) noexcept
-  {
-    if (_impl::_backdoor::_color(format._foreground)._type != _impl::_color::_color_type::KEEP)
-    {
-      _foreground = format._foreground;
-    }
-    
-    if (_impl::_backdoor::_color(format._background)._type != _impl::_color::_color_type::KEEP)
-    {
-      _background = format._background;
-    }
-    
-    if (format._font != static_cast<Font>(static_cast<uint_fast8_t>(-1)))
-    {
-      _font = format._font;
-    }
-    
-    if (format._underline != static_cast<Underline>(static_cast<uint_fast8_t>(-1)))
-    {
-      _underline = format._underline;
-    }
-    
-    if (format._strike != static_cast<Strike>(static_cast<uint_fast8_t>(-1)))
-    {
-      _strike = format._strike;
-    }
-    
-    if (format._overline != static_cast<Overline>(static_cast<uint_fast8_t>(-1)))
-    {
-      _overline = format._overline;
-    }
-  }
+  constexpr
+  Format::Format(F... formats) noexcept :
+    _foreground(_impl::_get<Foreground>(formats...)),
+    _background(_impl::_get<Background>(formats...)),
+    _font(_impl::_get<Font>(formats...)),
+    _underline(_impl::_get<Underline>(formats...)),
+    _strike(_impl::_get<Strike>(formats...)),
+    _overline(_impl::_get<Overline>(formats...))
+  {}
 
   inline
   std::ostream& operator<<(std::ostream& ostream_, const Format& format_) noexcept
@@ -409,13 +340,13 @@ inline namespace fmz
       ostream_ << "\033[39m";
       break;
     case _impl::_color::_color_type::BASIC:
-      ostream_ << "\033[" << static_cast<int>(fg_color._data._basic) << "m";
+      ostream_ << "\033[" << static_cast<unsigned>(fg_color._data._basic) << "m";
       break;
     case _impl::_color::_color_type::RGB:
       ostream_ << "\033[38;2;";
-      ostream_ << fg_color._data._rgb.r << ";";
-      ostream_ << fg_color._data._rgb.g << ";";
-      ostream_ << fg_color._data._rgb.b << "m";
+      ostream_ << static_cast<unsigned>(fg_color._data._rgb.r) << ";";
+      ostream_ << static_cast<unsigned>(fg_color._data._rgb.g) << ";";
+      ostream_ << static_cast<unsigned>(fg_color._data._rgb.b) << "m";
       break;
     default:
       break;
@@ -428,13 +359,13 @@ inline namespace fmz
       ostream_ << "\033[49m";
       break;
     case _impl::_color::_color_type::BASIC:
-      ostream_ << "\033[" << (static_cast<int>(bg_color._data._basic) + 10) << "m";
+      ostream_ << "\033[" << (static_cast<unsigned>(bg_color._data._basic) + 10) << "m";
       break;
     case _impl::_color::_color_type::RGB:
       ostream_ << "\033[48;2;";
-      ostream_ << bg_color._data._rgb.r << ";";
-      ostream_ << bg_color._data._rgb.g << ";";
-      ostream_ << bg_color._data._rgb.b << "m";
+      ostream_ << static_cast<unsigned>(bg_color._data._rgb.r) << ";";
+      ostream_ << static_cast<unsigned>(bg_color._data._rgb.g) << ";";
+      ostream_ << static_cast<unsigned>(bg_color._data._rgb.b) << "m";
       break;
     default:
       break;
@@ -454,7 +385,7 @@ inline namespace fmz
     case Font::Light_Italic:
       ostream_ << "\033[2m\033[3m";
       break;
-    case Font::Regular_Italic:
+    case Font::Italic:
       ostream_ << "\033[22m\033[3m";
       break;
     case Font::Bold_Italic:
