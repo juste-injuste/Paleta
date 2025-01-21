@@ -38,7 +38,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //---Paleta-------------------------------------------------------------------------------------------------------------
 namespace stz
 {
-inline namespace fmz
+inline namespace paleta
 //----------------------------------------------------------------------------------------------------------------------
 {
   struct Format;
@@ -47,6 +47,11 @@ inline namespace fmz
 
   enum { clear };
   enum { reset };
+    
+  struct RGB final
+  {
+    uint_fast8_t r, g, b;
+  };
 
   enum class Colors : uint_fast8_t
   {
@@ -67,11 +72,6 @@ inline namespace fmz
     Bright_Magenta  = 95,
     Bright_Cyan     = 96,
     Bright_White    = 97
-  };
-    
-  struct RGB final
-  {
-    uint_fast8_t r, g, b;
   };
 
   enum class Font : uint_fast8_t
@@ -109,17 +109,12 @@ inline namespace fmz
 
   namespace _version
   {
-#   define FMZ_VERSION_MAJOR  000
-#   define FMZ_VERSION_MINOR  000
-#   define FMZ_VERSION_PATCH  000
-#   define FMZ_VERSION_NUMBER ((FMZ_VERSION_MAJOR  * 1000 + FMZ_VERSION_MINOR) * 1000 + FMZ_VERSION_PATCH)
-
-    constexpr long MAJOR  = FMZ_VERSION_MAJOR;
-    constexpr long MINOR  = FMZ_VERSION_MINOR;
-    constexpr long PATCH  = FMZ_VERSION_PATCH;
-    constexpr long NUMBER = FMZ_VERSION_NUMBER;
+#   define PALETA_MAJOR  000
+#   define PALETA_MINOR  000
+#   define PALETA_PATCH  000
+#   define PALETA_NUMBER ((PALETA_MAJOR  * 1000 + PALETA_MINOR) * 1000 + PALETA_PATCH)
   }
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
   namespace _impl
   {
 # if defined(__clang__)
@@ -229,7 +224,7 @@ inline namespace fmz
 
     struct _backdoor;
   }
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
   struct Background
   {
     template<typename... C>
@@ -251,7 +246,7 @@ inline namespace fmz
     friend _impl::_backdoor;
     _impl::_color _color;
   };
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
   struct Format
   {
     template<typename... F>
@@ -267,7 +262,7 @@ inline namespace fmz
     const Strike     _strike     = static_cast<Strike>(static_cast<uint_fast8_t>(-1));
     const Overline   _overline   = static_cast<Overline>(static_cast<uint_fast8_t>(-1));
   };
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
 # undef terminal_format
   inline constexpr
   auto terminal_format(const Format& format_) noexcept -> Format
@@ -275,22 +270,21 @@ inline namespace fmz
     return format_;
   }
 
-# define terminal_format(...)                \
-    terminal_format([]() -> stz::fmz::Format \
-    {                                        \
-      using namespace stz::fmz;              \
-      return Format(__VA_ARGS__);            \
+# define terminal_format(...)                   \
+    terminal_format([]() -> stz::paleta::Format \
+    {                                           \
+      using namespace stz::paleta;              \
+      return Format(__VA_ARGS__);               \
     }())
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
   namespace _impl
   {
-#define _stz_impl_MAKE_TYPE_BACKDOOR(INTO, TYPE) using TYPE = INTO::TYPE;
-#define _stz_impl_MAKE_DATA_BACKDOOR(INTO, DATA)                                           \
-    static constexpr                                                                       \
-    auto DATA(const INTO& into_) noexcept -> std::remove_const<decltype(INTO::DATA)>::type \
-    {                                                                                      \
-      return into_.DATA;                                                                   \
-    }
+#   define _stz_impl_MAKE_DATA_BACKDOOR(INTO, DATA)                                          \
+      static constexpr                                                                       \
+      auto DATA(const INTO& into_) noexcept -> std::remove_const<decltype(INTO::DATA)>::type \
+      {                                                                                      \
+        return into_.DATA;                                                                   \
+      }
 
     struct _backdoor
     {
@@ -305,8 +299,9 @@ inline namespace fmz
 
       _stz_impl_MAKE_DATA_BACKDOOR(Background, _color)
     };
+#   undef _stz_impl_MAKE_DATA_BACKDOOR
   }
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
   template<typename... C>
   constexpr
   Background::Background(C... color_) noexcept :
@@ -458,15 +453,12 @@ inline namespace fmz
   }
 }
 }
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
 #undef _stz_impl_PRAGMA
 #undef _stz_impl_CLANG_IGNORE
 #undef _stz_impl_LIKELY
 #undef _stz_impl_EXPECTED
-#undef _stz_impl_MAKE_TYPE_BACKDOOR
-#undef _stz_impl_MAKE_DATA_BACKDOOR
-#undef _stz_impl_MAKE_CONS_BACKDOOR
-//----------------------------------------------------------------------------------------------------------------------
+//*///------------------------------------------------------------------------------------------------------------------
 #else
 #error "Paleta: Support for ISO C++11 is required"
 #endif

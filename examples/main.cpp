@@ -8,9 +8,11 @@ int main()
 
   std::cout << stz::Background(0, 50, 50);
   
-  // const auto fmt_1 = stz::terminal_format(Foreground(125, 33, 200), Strike::None,   Underline::Single, Font::Italic );
-  // const auto fmt_2 = stz::terminal_format(Foreground(Colors::Red),  Strike::Single, Underline::None                 );
-  // const auto fmt_3 = stz::terminal_format(Foreground(reset),        Strike::None,   Underline::Double, Font::Regular);
+  const auto fmt_a = terminal_format(Foreground(125, 33, 200), Strike::None,   Underline::Single, Font::Italic );
+  const auto fmt_b = terminal_format(Foreground(Colors::Red),  Strike::Single, Underline::None                 );
+  const auto fmt_c = terminal_format(Foreground(reset),        Strike::None,   Underline::Double, Font::Regular);
+
+  std::cout << fmt_a << fmt_b << fmt_c;
   
   constexpr auto fmt_1 = stz::Format(stz::Foreground(125, 33, 200),     stz::Strike::None,   stz::Underline::Single, stz::Font::Italic );
   constexpr auto fmt_2 = stz::Format(stz::Foreground(stz::Colors::Red), stz::Strike::Single, stz::Underline::None                      );
