@@ -35,6 +35,17 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #include <cstdint>  // for uint_fast8_t
 #include <ostream>  // for std::ostream
 #include <iostream> // for std::cout, std::clog, std::cerr
+//---necessary libraries------------------------------------------------------------------------------------------------
+#if defined(_WIN32)
+# include <conio.h>
+# include <windows.h>
+#elif defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+// # include <termios.h>
+// # include <unistd.h>
+// # include <fcntl.h>
+// # include <sys/select.h>
+# error "Unsupported platform for wait_for_keypress"
+#endif
 //---Paleta-------------------------------------------------------------------------------------------------------------
 namespace stz
 {
@@ -107,6 +118,50 @@ inline namespace paleta
 
   struct Background;
 
+  void wait_for_keypress()
+  {
+#   ifdef _WIN32
+      while (not _kbhit())
+      {
+        Sleep(1);
+      }
+
+      _getch();
+#   else
+      // // Save terminal settings
+      // termios oldt, newt;
+      // tcgetattr(STDIN_FILENO, &oldt);
+      // newt = oldt;
+      // newt.c_lflag &= ~(ICANON | ECHO);  // Non-canonical, no echo
+      // tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+      // // Set stdin to non-blocking
+      // int old_flags = fcntl(STDIN_FILENO, F_GETFL);
+      // fcntl(STDIN_FILENO, F_SETFL, old_flags | O_NONBLOCK);
+
+      // char ch;
+      // while (true) {
+      //     fd_set set;
+      //     FD_ZERO(&set);
+      //     FD_SET(STDIN_FILENO, &set);
+
+      //     timeval timeout = {0, 10000};  // 10 ms
+
+      //     int rv = select(STDIN_FILENO + 1, &set, nullptr, nullptr, &timeout);
+      //     if (rv > 0 && read(STDIN_FILENO, &ch, 1) > 0) {
+      //         break;
+      //     }
+
+      //     // SIGINT will be handled asynchronously
+      // }
+
+      // // Restore terminal state
+      // tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+      // fcntl(STDIN_FILENO, F_SETFL, old_flags);
+#   endif
+  }
+
+
   namespace _version
   {
 #   define PALETA_MAJOR  000
@@ -141,15 +196,25 @@ inline namespace paleta
 
 // support from clang 3.9.0 and GCC 4.7.3 onward
 # if defined(__clang__)
-#   define _stz_impl_EXPECTED(CONDITION) (__builtin_expect(static_cast<bool>(CONDITION), 1)) _stz_impl_LIKELY
+#   define _stz_impl_EXPECTED(CONDITION) (__builtin_expect((CONDITION), 1)) _stz_impl_LIKELY
 # elif defined(__GNUC__)
-#   define _stz_impl_EXPECTED(CONDITION) (__builtin_expect(static_cast<bool>(CONDITION), 1)) _stz_impl_LIKELY
+#   define _stz_impl_EXPECTED(CONDITION) (__builtin_expect((CONDITION), 1)) _stz_impl_LIKELY
 # else
 #   define _stz_impl_EXPECTED(CONDITION) (CONDITION) _stz_impl_LIKELY
 # endif
 
     struct _color final
     {
+      constexpr
+      _color(const size_t hex_) noexcept :
+        _type(_color_type::RGB),
+        _data(RGB{
+          static_cast<uint_fast8_t>(0xFF & (hex_ >> 16)),
+          static_cast<uint_fast8_t>(0xFF & (hex_ >> 8 )),
+          static_cast<uint_fast8_t>(0xFF &  hex_       )
+        })
+      {}
+
       constexpr
       _color(const size_t red_, const size_t green_, const size_t blue_) noexcept :
         _type(_color_type::RGB),
@@ -186,9 +251,9 @@ inline namespace paleta
 
       union _color_data
       {
-        constexpr _color_data(Colors basic_color) noexcept : _basic(basic_color) {}
-        constexpr _color_data(RGB            rgb) noexcept : _rgb(rgb)           {}
-        constexpr _color_data(                  ) noexcept : _rgb{0, 0, 0}       {}
+        constexpr _color_data(Colors basic_) noexcept : _basic(basic_) {}
+        constexpr _color_data(RGB      rgb_) noexcept : _rgb(rgb_)           {}
+        constexpr _color_data(             ) noexcept : _rgb{0, 0, 0}       {}
         Colors _basic;
         RGB    _rgb;
       } _data;
@@ -196,14 +261,14 @@ inline namespace paleta
 
     template<typename T1, typename T2>
     constexpr
-    auto _cvt(T2 data) -> typename std::enable_if<std::is_same<T1, T2>::value == true, T1>::type
+    auto _cvt(T2 data_) -> typename std::enable_if<std::is_same<T1, T2>::value == true, T1>::type
     {
-      return data;
+      return data_;
     }
 
     template<typename T1, typename T2>
     constexpr
-    auto _cvt(T2 data) -> typename std::enable_if<std::is_same<T1, T2>::value != true, T1>::type
+    auto _cvt(T2) -> typename std::enable_if<std::is_same<T1, T2>::value != true, T1>::type
     {
       return T1();
     }
